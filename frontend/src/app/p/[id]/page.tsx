@@ -1,7 +1,4 @@
 // src/app/p/[id]/page.tsx
-
-// ✅ CRITICAL: Forces Vercel to NEVER cache this page.
-// Every request hits Supabase fresh. This is the core fix for Bug 1.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -17,24 +14,27 @@ export default async function PublicLandingPage({ params }: PageProps) {
   const { id } = params;
   const supabase = createSupabaseServerClient();
 
-  // ✅ Fetch fresh from Supabase on every single request
   const { data, error } = await supabase
     .from("landing_page_jobs")
-    .select("*")
+    .select("structure, status")
     .eq("id", id)
+    .eq("status", "completed")      // ✅ Only completed jobs
     .single();
 
-  // ✅ If the row doesn't exist yet, show a proper 404
-  if (error || !data) {
+  // Debug what failed
+  if (error) {
+    console.error("Supabase error:", error);
     notFound();
   }
 
-  // ✅ The structure field holds the JSON from the worker
-  const structure = data.structure;
+  if (!data || !data.structure) {
+    console.error("No data or no structure:", data);
+    notFound();
+  }
 
   return (
     <main>
-      <DynamicRenderer structure={structure} />
+      <DynamicRenderer structure={data.structure} />
     </main>
   );
 }
