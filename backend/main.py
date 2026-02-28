@@ -49,15 +49,13 @@ security = HTTPBearer()  # ← Add this line
 
 # ── CORS Middleware ────────────────────────────────────────────────────────
 # In production, replace with your actual deployed frontend domain.
-allowed_origins = [
-    settings.frontend_url,          # http://localhost:3000 in dev
-    "https://landylocal.com",       # Replace with your production domain
-]
+import os
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,          # Required for Supabase Auth cookies
+    allow_origins=[FRONTEND_URL],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
