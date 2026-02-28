@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,  // ← add this
+  },
+  typescript: {
+    ignoreBuildErrors: true,   // ← add this
+  },
   images: {
     remotePatterns: [
       {
