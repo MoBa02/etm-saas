@@ -125,7 +125,7 @@ export function useJobStream(): UseJobStreamReturn {
       pollingRef.current = setInterval(async () => {
         try {
           const { data, error: dbError } = await supabase
-            .from("landing_pages")
+            .from("landing_page_jobs")
             .select("id, structure")
             .eq("id", jobId)
             .single();

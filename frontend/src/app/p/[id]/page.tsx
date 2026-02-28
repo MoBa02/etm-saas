@@ -19,7 +19,7 @@ export default async function PublicLandingPage({ params }: PageProps) {
 
   // ✅ Fetch fresh from Supabase on every single request
   const { data, error } = await supabase
-    .from("landing_pages")
+    .from("landing_page_jobs")
     .select("*")
     .eq("id", id)
     .single();
