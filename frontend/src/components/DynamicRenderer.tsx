@@ -143,6 +143,14 @@ function FooterBlock() {
 }
 
 // ── Main Renderer ─────────────────────────────────────────────────────────
+"use client";  // ✅ Makes it client-only (fonts are client-only anyway)
+
+import { Cairo } from "next/font/google";  // ✅ Add this
+const cairo = Cairo({ 
+  subsets: ["arabic", "latin"], 
+  weight: ["400", "600", "700"] 
+});
+
 
 export default function DynamicRenderer({ structure }: { structure: LandingPageStructure }) {
   const { theme, rtl, layout } = structure;
