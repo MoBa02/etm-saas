@@ -127,7 +127,7 @@ export function useJobStream(): UseJobStreamReturn {
           const { data, error: dbError } = await supabase
             .from("landing_pages")
             .select("id, structure")
-            .eq("id", jobId)
+            .eq("job_id", jobId)
             .single();
 
           if (data && !dbError) {
@@ -138,6 +138,8 @@ export function useJobStream(): UseJobStreamReturn {
             setCurrentMessage("اكتملت الصفحة بنجاح! ✅");
             setStructure(data.structure);
             setStatus("completed");
+
+            window.location.href = `/p/${data.id}`;
           }
           // If no row yet, do nothing — interval will fire again in 5s
         } catch (e) {
