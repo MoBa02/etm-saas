@@ -127,7 +127,7 @@ export function useJobStream(): UseJobStreamReturn {
           const { data, error: dbError } = await supabase
             .from("landing_pages")
             .select("id, structure")
-            .eq("job_id", jobId)
+            .eq("id", jobId)
             .single();
 
           if (data && !dbError) {
