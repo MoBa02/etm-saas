@@ -12,8 +12,8 @@ psycopg2-binary==2.9.9
 supabase==2.5.0
 
 # ── Data Validation ────────────────────────────────────────
-pydantic==2.7.1
-pydantic-settings==2.2.1
+pydantic==2.7.4
+pydantic-settings==2.3.4
 
 # ── Background Jobs ────────────────────────────────────────
 redis==5.0.4
