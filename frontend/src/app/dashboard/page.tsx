@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useJobStream, JobFormData } from "@/hooks/useJobStream";
 import DynamicRenderer from "@/components/DynamicRenderer";
 import Navbar from "@/components/Navbar";
@@ -30,8 +29,13 @@ function ShareButton({ jobId }: { jobId: string }) {
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { jobId, status, currentStep, currentMessage, completedSteps, structure, error, submitJob, reset } = useJobStream();
+  // ✅ isPolling is now destructured from the updated hook
+  const {
+    jobId, status, currentStep, currentMessage,
+    completedSteps, structure, error,
+    isPolling,
+    submitJob, reset,
+  } = useJobStream();
 
   const [form, setForm] = useState<JobFormData>({
     business_name: "",
@@ -48,7 +52,7 @@ export default function DashboardPage() {
     await submitJob(form);
   };
 
-  // ── Show rendered page when done ────────────────────────────────────────
+  // ── Completed: show rendered page ──────────────────────────────
   if (status === "completed" && structure) {
     return (
       <div>
@@ -66,35 +70,67 @@ export default function DashboardPage() {
     );
   }
 
-  // ── Show pipeline progress ───────────────────────────────────────────────
+  // ── Processing: show stepper ────────────────────────────────────
   if (status === "processing") {
     return (
       <div dir="rtl" className="font-sans min-h-screen bg-slate-50 flex flex-col">
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center px-6">
+
           <h2 className="text-2xl font-extrabold text-slate-900 mb-2">جاري الإنشاء...</h2>
-          <p className="text-slate-500 mb-10">{currentMessage || "يعمل الذكاء الاصطناعي على صفحتك"}</p>
+
+          {/* ✅ Polling banner — only shown when SSE drops and polling takes over */}
+          {isPolling ? (
+            <div className="flex items-center gap-2 mb-6 px-5 py-3 bg-amber-50 border border-amber-200 rounded-2xl">
+              {/* Animated spinner dot */}
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping inline-block" />
+              <p className="text-amber-700 text-sm font-medium">
+                الاتصال انقطع مؤقتاً — لا تزال صفحتك تُنشأ، يرجى الانتظار...
+              </p>
+            </div>
+          ) : (
+            <p className="text-slate-500 mb-10">
+              {currentMessage || "يعمل الذكاء الاصطناعي على صفحتك"}
+            </p>
+          )}
+
+          {/* ✅ Stepper — dims all steps during polling since we lose step updates */}
           <div className="flex flex-col gap-4 w-full max-w-md">
             {steps.map((step) => {
               const isDone = completedSteps.includes(step as any);
-              const isActive = currentStep === step;
+              const isActive = !isPolling && currentStep === step;
+
               return (
                 <div
                   key={step}
                   className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${
-                    isDone ? "bg-emerald-50 border border-emerald-200" :
-                    isActive ? "bg-white shadow-md border border-slate-200" :
-                    "bg-slate-100 opacity-40"
+                    isDone
+                      ? "bg-emerald-50 border border-emerald-200"
+                      : isActive
+                      ? "bg-white shadow-md border border-slate-200"
+                      : isPolling
+                      ? "bg-slate-100 opacity-60" // ✅ Soft dim when polling, not dead grey
+                      : "bg-slate-100 opacity-40"
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    isDone ? "bg-emerald-500 text-white" :
-                    isActive ? "bg-slate-900 text-white animate-pulse" :
-                    "bg-slate-300 text-white"
-                  }`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      isDone
+                        ? "bg-emerald-500 text-white"
+                        : isActive
+                        ? "bg-slate-900 text-white animate-pulse"
+                        : isPolling
+                        ? "bg-amber-300 text-white animate-pulse" // ✅ Amber pulse during polling
+                        : "bg-slate-300 text-white"
+                    }`}
+                  >
                     {isDone ? "✓" : steps.indexOf(step) + 1}
                   </div>
-                  <span className={`font-semibold ${isDone ? "text-emerald-700" : "text-slate-700"}`}>
+                  <span
+                    className={`font-semibold ${
+                      isDone ? "text-emerald-700" : "text-slate-700"
+                    }`}
+                  >
                     {{
                       clarifier: "تحليل النشاط التجاري",
                       researcher: "بحث السوق المحلي",
@@ -106,22 +142,34 @@ export default function DashboardPage() {
               );
             })}
           </div>
+
+          {/* ✅ Polling sub-note — reassures user not to close the tab */}
+          {isPolling && (
+            <p className="mt-8 text-xs text-slate-400 text-center max-w-xs">
+              لا تغلق هذا التبويب. سيتم توجيهك تلقائياً عند اكتمال الصفحة.
+            </p>
+          )}
+
         </div>
       </div>
     );
   }
 
-  // ── Show form ────────────────────────────────────────────────────────────
+  // ── Idle: show form ─────────────────────────────────────────────
   return (
     <div dir="rtl" className="font-sans min-h-screen bg-slate-50 flex flex-col">
       <Navbar />
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="bg-white w-full max-w-lg p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
-          <h1 className="text-3xl font-extrabold text-slate-900 mb-2 text-center">إنشاء صفحة هبوط</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900 mb-2 text-center">
+            إنشاء صفحة هبوط
+          </h1>
           <p className="text-slate-500 text-center mb-8">أدخل بيانات نشاطك التجاري</p>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm text-center">{error}</div>
+            <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm text-center">
+              {error}
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
